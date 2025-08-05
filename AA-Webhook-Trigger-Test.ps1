@@ -22,3 +22,16 @@ $response = Invoke-WebRequest -Method Post -Uri $webhookURI -Body $body -UseBasi
 $response
 
 # --[ End of script ]
+
+
+<# - To test incoming parameters, the section below goes into your Runbook header script.
+
+param  
+(  
+    [Parameter(Mandatory = $false)]  
+    [object] $WebhookData  
+)  
+$Inputs = ConvertFrom-Json $webhookdata.RequestBody  
+Write-Output $($Inputs.message)
+
+#>
