@@ -1,4 +1,5 @@
 # Azure Automation Bootcamp
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/1d1bfe14-d274-498c-aba6-a3d65a04a45f" />
 
 >What is Azure Automation?
 
