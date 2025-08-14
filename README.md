@@ -39,7 +39,7 @@ Cloud-based automation service that provides:
 >Setting up Azure Automation
 
 1. Create Automation Account
-2. Enable System Managed Identity
+2. Enable System Managed Identity (Add Graph permissions script: https://github.com/MG-Cloudflow/MSGraph-Examples/blob/main/Managed-Identity/GrandGraphApiPermissionV2.ps1)
 3. Link to Log Analytics (for logs/monitoring)
 4. Import Modules (Az, Graph, Intune, etc.)
 5. Author a Runbook > PowerShell or Python (Use the graphical editor or import from GitHub/Storage)
