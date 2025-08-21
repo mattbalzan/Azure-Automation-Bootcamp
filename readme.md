@@ -1,4 +1,6 @@
 # Azure Automation Overview
+<img width="512" height="512" alt="image" src="https://github.com/user-attachments/assets/4dadb4ad-f5e0-4366-9881-76fb2e692642" />
+
 
 > **What is Azure Automation?**  
 
