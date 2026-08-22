@@ -188,6 +188,9 @@ Useful columns in `AzureDiagnostics` for Automation:
 | Duration column blank for some jobs | The job started before the selected time range, so no `Started` record was matched. Widen the time range. |
 | Workbook saves but is empty for colleagues | They need `Log Analytics Reader` on the workspace, not just access to the workbook. |
 
+---
+
+## Demo Report
 
 
-<img src="./images/workbook-demo.png" height="300" alt="Az Automation Workbook">
+<img src="../images/workbook-demo.png" alt="Az Automation Workbook">
