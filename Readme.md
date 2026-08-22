@@ -1,6 +1,6 @@
 # Azure Automation Overview
-![Diagram](./images/readme.png)
 
+<img src="./images/readme.png" height="400" alt="Az Automation engineer">
 
 > **What is Azure Automation?**  
 

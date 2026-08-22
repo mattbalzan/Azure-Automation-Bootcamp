@@ -189,4 +189,5 @@ Useful columns in `AzureDiagnostics` for Automation:
 | Workbook saves but is empty for colleagues | They need `Log Analytics Reader` on the workspace, not just access to the workbook. |
 
 
-![Diagram](./images/workbook-demo.png)
+
+<img src="./images/workbook-demo.png" height="300" alt="Az Automation Workbook">
