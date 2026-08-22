@@ -17,6 +17,24 @@ Core capabilities include:
 
 ---
 
+## What's in this repo
+
+| Path | What it is |
+| ---- | ---------- |
+| [scripts/01-Demo-HelloWorld-Runbook.ps1](scripts/01-Demo-HelloWorld-Runbook.ps1) | Smoke test — proves a new Automation Account runs jobs |
+| [scripts/02-Demo-ManagedIdentity-StartStopVMs.ps1](scripts/02-Demo-ManagedIdentity-StartStopVMs.ps1) | Start/stop VMs by tag using a Managed Identity |
+| [scripts/03-Demo-Webhook-Runbook.ps1](scripts/03-Demo-Webhook-Runbook.ps1) | Runbook that receives a webhook payload |
+| [scripts/04-Demo-Webhook-Trigger.ps1](scripts/04-Demo-Webhook-Trigger.ps1) | Client script that fires the webhook |
+| [scripts/05-Demo-HybridWorker-Runbook.ps1](scripts/05-Demo-HybridWorker-Runbook.ps1) | Inventory + internal connectivity test, run on a Hybrid Worker |
+| [scripts/06-Setup-AutomationAccount.ps1](scripts/06-Setup-AutomationAccount.ps1) | Builds the whole lab: account, identity, RBAC, runbooks, schedule, webhook |
+| [scripts/07-Setup-HybridWorker.ps1](scripts/07-Setup-HybridWorker.ps1) | Onboards an Azure VM or Arc-enabled server as a Hybrid Worker |
+| [workbooks/Runbook-Monitoring.workbook.json](workbooks/Runbook-Monitoring.workbook.json) | Azure Monitor workbook for job monitoring |
+| [workbooks/Monitor-Workbook-Setup-Guide.md](workbooks/Monitor-Workbook-Setup-Guide.md) | Step-by-step guide for deploying that workbook |
+
+Every script carries full comment-based help — run `Get-Help .\script.ps1 -Full` for parameters and examples.
+
+---
+
 ## Pre-requisites
 
 - An **Azure Subscription**  
@@ -119,10 +137,72 @@ With **Log Analytics + Azure Monitor**, you can:
 
 ```kusto
 AzureDiagnostics
-| where ResourceType == "AUTOMATIONACCOUNTS"
-| where OperationName == "Job"
-| summarize count() by JobStatus_s, bin(TimeGenerated, 1h)
+| where ResourceProvider == "MICROSOFT.AUTOMATION"
+| where Category == "JobLogs"
+| summarize Jobs = dcount(JobId_g) by ResultType, bin(TimeGenerated, 1h)
 ```
+
+> 🔹 `ResultType` is one of `Started`, `Completed`, `Failed`, `Stopped` or `Suspended`. `JobId_g` correlates every record belonging to a single job run.
+
+---
+
+## Monitoring Runbooks with an Azure Monitor Workbook
+
+Job history in the portal only shows one Automation Account at a time and drops off after 30 days. A **workbook** gives you a single pinnable dashboard across every account and workspace.
+
+This repo ships a ready-made one:
+
+| File | Purpose |
+| ---- | ------- |
+| [workbooks/Runbook-Monitoring.workbook.json](workbooks/Runbook-Monitoring.workbook.json) | The workbook template — paste into the Advanced Editor or deploy via Bicep |
+| [workbooks/Monitor-Workbook-Setup-Guide.md](workbooks/Monitor-Workbook-Setup-Guide.md) | Full walkthrough: diagnostic settings, import, parameters, alerting, troubleshooting |
+
+**What it reports**
+
+| Tile | Answers |
+| ---- | ------- |
+| Jobs by outcome | How many completed, failed, stopped or suspended? |
+| Job outcomes over time | Is the failure rate trending up? |
+| Failure rate by runbook | Which runbook is the problem child? |
+| Recent error / warning streams | What was the actual error message? |
+| Longest running jobs | What's driving my per-minute billing? |
+| Sandbox vs Hybrid Worker | Where are jobs actually executing? |
+
+**Quick start**
+
+1. **Turn on diagnostics.** Automation Account → *Monitoring* → **Diagnostic settings** → enable **JobLogs** and **JobStreams** → send to your Log Analytics workspace. Nothing appears in `AzureDiagnostics` until you do this.
+
+   ```powershell
+   $aa = Get-AzAutomationAccount -ResourceGroupName 'rg-automation-bootcamp' -Name 'aa-bootcamp'
+   $ws = Get-AzOperationalInsightsWorkspace -ResourceGroupName 'rg-monitoring' -Name 'law-bootcamp'
+
+   New-AzDiagnosticSetting -Name 'diag-automation-to-law' `
+       -ResourceId  $aa.AutomationAccountId `
+       -WorkspaceId $ws.ResourceId `
+       -Log @(
+           New-AzDiagnosticSettingLogSettingsObject -Category 'JobLogs'    -Enabled $true
+           New-AzDiagnosticSettingLogSettingsObject -Category 'JobStreams' -Enabled $true
+       )
+   ```
+
+2. **Import the workbook.** Portal → **Monitor** → **Workbooks** → **+ New** → **`</>` Advanced Editor** → paste the contents of `Runbook-Monitoring.workbook.json` → **Apply** → **Save**.
+
+3. **Set the pills** at the top: time range, Log Analytics workspace (multi-select), and runbook filter. Save again so they stick.
+
+4. **Pin tiles** to an Azure dashboard, or share the workbook — viewers need `Log Analytics Reader` on the workspace, not just workbook access.
+
+> 🔹 `JobStreams` captures every `Write-Output` line your runbooks emit and is usually the bulk of the ingestion bill. If cost bites, keep `JobLogs` and drop `JobStreams` — you only lose the error-message tile.
+
+**Then alert on it.** A dashboard tells you after you look; an alert tells you straight away. Create a log search alert on:
+
+```kusto
+AzureDiagnostics
+| where ResourceProvider == "MICROSOFT.AUTOMATION"
+| where Category == "JobLogs" and ResultType == "Failed"
+| summarize Failures = dcount(JobId_g) by RunbookName_s
+```
+
+Fire when `Failures > 0`, evaluated every 5 minutes over a 15-minute window. The action group can even trigger another runbook via webhook — see [scripts/03-Demo-Webhook-Runbook.ps1](scripts/03-Demo-Webhook-Runbook.ps1).
 
 ---
 

@@ -1,0 +1,347 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "AUTOMATION ACCOUNT REPORT - Please first choose an account from the parameter box."
+      },
+      "name": "text - 6"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [
+          "/subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}"
+        ],
+        "parameters": [
+          {
+            "id": "12d03044-6118-4873-8e55-e3065947ba9b",
+            "version": "KqlParameterItem/1.0",
+            "name": "paramSubscription",
+            "type": 6,
+            "description": "Allows you to choose a subscription",
+            "isRequired": true,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "includeAll": false,
+              "showDefault": false
+            },
+            "value": "/subscriptions/{subscriptionID}",
+            "label": "Subscription"
+          },
+          {
+            "id": "d0c08d3b-09f5-40b4-af22-b995497678be",
+            "version": "KqlParameterItem/1.0",
+            "name": "paramAutomationAccount",
+            "label": "Automation Account",
+            "type": 2,
+            "description": "Allows you to choose from a list of Automation Accounts",
+            "isRequired": true,
+            "query": "AzureDiagnostics \r\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\"\r\n| where TimeGenerated > ago(30d)\r\n| summarize by Resource\r\n| order by Resource asc",
+            "crossComponentResources": [
+              "/subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 2592000000
+            },
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "value": ""
+          },
+          {
+            "id": "76cbd401-79f4-43ec-b572-8e5f5998ac2c",
+            "version": "KqlParameterItem/1.0",
+            "name": "paramTimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "description": "Allows you to choose a time range",
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "value": {
+              "durationMs": 2592000000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "Automation Accounts parameters"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let expectedStatuses = datatable(ResultType:string)\r\n[\r\n    \"Completed\",\"Failed\",\"Started\",\"Created\",\"Suspended\",\"Stopped\"\r\n];\r\nexpectedStatuses\r\n| join kind=leftouter (\r\n    AzureDiagnostics\r\n    | where ResourceProvider == \"MICROSOFT.AUTOMATION\" and SubscriptionId == '{paramSubscription:subscriptionid}'\r\n    | where Category == \"JobLogs\"\r\n    | where RunbookName_s != \"ImportAutomationModuleACI\"\r\n    | where isnotempty(RunbookName_s)\r\n    | where TimeGenerated {paramTimeRange}\r\n    | extend AutomationAccount = tostring(split(ResourceId, \"/\")[-1])\r\n    | where (isempty('{paramAutomationAccount}') or AutomationAccount == '{paramAutomationAccount}')\r\n    | summarize Count=count() by ResultType\r\n) on ResultType\r\n| project ResultType, Count=coalesce(Count, 0)\r\n\r\n",
+        "size": 3,
+        "title": "RUNBOOK STATUSES",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}"
+        ],
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "ResultType",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "Count",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "style": "decimal",
+                "maximumFractionDigits": 2,
+                "maximumSignificantDigits": 3
+              }
+            }
+          },
+          "showBorder": false
+        }
+      },
+      "name": "RUNBOOK STATUSES"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\r\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and SubscriptionId == '{paramSubscription:subscriptionid}'\r\n| where Category == \"JobLogs\"\r\n| where RunbookName_s != \"ImportAutomationModuleACI\" \r\n| where isnotempty(RunbookName_s)\r\n| where TimeGenerated {paramTimeRange}\r\n| extend AutomationAccount = tostring(split(ResourceId, \"/\")[-1])\r\n| where (isempty('{paramAutomationAccount}') or AutomationAccount == '{paramAutomationAccount}')\r\n| where ResultDescription == \"Job Completed\"\r\n| summarize count() by RunbookName=RunbookName_s, bin(TimeGenerated, 1h)\r\n",
+        "size": 1,
+        "title": "ALL COMPLETED RUNBOOKS",
+        "noDataMessage": "OH OH! You have 0 runbooks running! Get some cracking!",
+        "noDataMessageStyle": 4,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}"
+        ],
+        "visualization": "unstackedbar",
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "RunbookName",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "count_",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "graphSettings": {
+          "type": 0,
+          "topContent": {
+            "columnMatch": "RunbookName",
+            "formatter": 1
+          },
+          "centerContent": {
+            "columnMatch": "count_",
+            "formatter": 1,
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "mapSettings": {
+          "locInfo": "LatLong",
+          "sizeSettings": "count_",
+          "sizeAggregation": "Sum",
+          "legendMetric": "count_",
+          "legendAggregation": "Sum",
+          "itemColorSettings": {
+            "type": "heatmap",
+            "colorAggregation": "Sum",
+            "nodeColorField": "count_",
+            "heatmapPalette": "greenRed"
+          }
+        }
+      },
+      "name": "ALL COMPLETED RUNBOOKS"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics \r\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and SubscriptionId == '{paramSubscription:subscriptionid}'\r\n| where Category == \"JobLogs\" and (ResultType == \"Failed\" or ResultType == \"Stopped\" or ResultType == \"Suspended\") and TimeGenerated {paramTimeRange}\r\n| extend AutomationAccount = tostring(split(ResourceId, \"/\")[-1])\r\n| where (isempty('{paramAutomationAccount}') or AutomationAccount == '{paramAutomationAccount}')\r\n| project TimeGenerated , RunbookName_s , ResultType , _ResourceId , JobId_g",
+        "size": 3,
+        "title": "RUNBOOKS WITH ISSUES 🤔",
+        "noDataMessage": "HOORAY! All Runbooks fully functional!",
+        "noDataMessageStyle": 3,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}"
+        ],
+        "visualization": "table",
+        "showExpandCollapseGrid": true
+      },
+      "name": "RUNBOOKS WITH ISSUES",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics \r\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and SubscriptionId == '{paramSubscription:subscriptionid}' \r\n| where TimeGenerated {paramTimeRange}\r\n| where Category == \"JobStreams\" and StreamType_s == \"Error\"\r\n| extend AutomationAccount = tostring(split(ResourceId, \"/\")[-1])\r\n| where (isempty('{paramAutomationAccount}') or AutomationAccount == '{paramAutomationAccount}')\r\n| project Runbook=RunbookName_s,JobId=JobId_g,TimeGenerated,ResultDescription",
+        "size": 3,
+        "title": "JOB ERRORS 🤬",
+        "noDataMessage": "Bad Ass Coder! No errors in your tenant as you live!",
+        "noDataMessageStyle": 3,
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "showRefreshButton": true,
+        "showExportToExcel": true,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}"
+        ],
+        "visualization": "table",
+        "showExpandCollapseGrid": true,
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "ResultDescription",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "100%"
+              }
+            }
+          ],
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "TimeGenerated",
+              "sortOrder": 1
+            }
+          ],
+          "labelSettings": [
+            {
+              "columnId": "JobId",
+              "label": "Job Id"
+            },
+            {
+              "columnId": "TimeGenerated",
+              "label": "Time Generated"
+            },
+            {
+              "columnId": "ResultDescription",
+              "label": "Result Description"
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "TimeGenerated",
+            "sortOrder": 1
+          }
+        ]
+      },
+      "name": "Job Errors",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\r\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and SubscriptionId == '{paramSubscription:subscriptionid}' and RunbookName_s != \"ImportAutomationModuleACI\"\r\n| extend AutomationAccount = tostring(split(ResourceId, \"/\")[-1])\r\n| where (isempty('{paramAutomationAccount}') or AutomationAccount == '{paramAutomationAccount}')\r\n| where ResultType == \"Started\" or ResultType == \"Completed\"\r\n| order by JobId_g, RunbookName_s, TimeGenerated asc\r\n| extend Duration = iff(ResultType != \"Started\" and prev(ResultType) == \"Started\", TimeGenerated - prev(TimeGenerated), timespan(null)), prev(RunbookName_s)\r\n| extend StartTime = prev(TimeGenerated)\r\n| extend Duration = bin(Duration,1s)\r\n| where isnotnull(Duration)\r\n| project StartTime, Duration, Runbook=RunbookName_s, Resource\r\n| order by StartTime",
+        "size": 3,
+        "title": "JOB RUN TIMES ⌛",
+        "noDataMessage": "WHAT!? Are you not leveraging the power of Automation!?",
+        "noDataMessageStyle": 2,
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/{subscriptionID}/resourceGroups/{resourceGroup}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}"
+        ],
+        "visualization": "table",
+        "showExpandCollapseGrid": true,
+        "gridSettings": {
+          "labelSettings": [
+            {
+              "columnId": "StartTime",
+              "label": "Start Time"
+            },
+            {
+              "columnId": "Resource",
+              "label": "Automation Account"
+            }
+          ]
+        }
+      },
+      "name": "JOB RUN TIMES",
+      "styleSettings": {
+        "showBorder": true
+      }
+    }
+  ],
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

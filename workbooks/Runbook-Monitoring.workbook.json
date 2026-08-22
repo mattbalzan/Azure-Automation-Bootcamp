@@ -1,0 +1,283 @@
+{
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json",
+  "version": "Notebook/1.0",
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Azure Automation — Runbook Monitoring\n\nJob outcomes, durations, failures and error streams for one or more Automation Accounts.\n\n> Requires a **Diagnostic setting** on the Automation Account sending the **JobLogs** and **JobStreams** categories to the Log Analytics workspace selected below."
+      },
+      "name": "text - title"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "a1b2c3d4-0001-4000-8000-000000000001",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time range",
+            "type": 4,
+            "isRequired": true,
+            "typeSettings": {
+              "selectableValues": [
+                { "durationMs": 3600000 },
+                { "durationMs": 14400000 },
+                { "durationMs": 86400000 },
+                { "durationMs": 172800000 },
+                { "durationMs": 604800000 },
+                { "durationMs": 2592000000 }
+              ],
+              "allowCustom": true
+            },
+            "value": { "durationMs": 86400000 }
+          },
+          {
+            "id": "a1b2c3d4-0001-4000-8000-000000000002",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "label": "Log Analytics workspace",
+            "type": 5,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "typeSettings": {
+              "resourceTypeFilter": {
+                "microsoft.operationalinsights/workspaces": true
+              },
+              "additionalResourceOptions": [],
+              "showDefault": false
+            }
+          },
+          {
+            "id": "a1b2c3d4-0001-4000-8000-000000000003",
+            "version": "KqlParameterItem/1.0",
+            "name": "RunbookName",
+            "label": "Runbook",
+            "type": 2,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and Category == \"JobLogs\"\n| distinct RunbookName_s\n| where isnotempty(RunbookName_s)\n| order by RunbookName_s asc",
+            "crossComponentResources": [
+              "{Workspace}"
+            ],
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "showDefault": false
+            },
+            "timeContext": { "durationMs": 0 },
+            "timeContextFromParameter": "TimeRange",
+            "queryType": 0,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "value": [
+              "value::all"
+            ]
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Job outcomes"
+      },
+      "name": "text - outcomes heading"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and Category == \"JobLogs\"\n| where \"*\" in ({RunbookName}) or RunbookName_s in ({RunbookName})\n| where ResultType in (\"Completed\", \"Failed\", \"Stopped\", \"Suspended\")\n| summarize Jobs = dcount(JobId_g) by ResultType\n| order by Jobs desc",
+        "size": 3,
+        "title": "Jobs by outcome",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "ResultType",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "Jobs",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            }
+          },
+          "showBorder": true
+        }
+      },
+      "name": "query - outcome tiles"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and Category == \"JobLogs\"\n| where \"*\" in ({RunbookName}) or RunbookName_s in ({RunbookName})\n| where ResultType in (\"Completed\", \"Failed\", \"Stopped\", \"Suspended\")\n| summarize Jobs = dcount(JobId_g) by bin(TimeGenerated, {TimeRange:grain}), ResultType",
+        "size": 0,
+        "title": "Job outcomes over time",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "linechart"
+      },
+      "name": "query - outcome trend"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Failures"
+      },
+      "name": "text - failures heading"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and Category == \"JobLogs\"\n| where \"*\" in ({RunbookName}) or RunbookName_s in ({RunbookName})\n| where ResultType in (\"Completed\", \"Failed\")\n| summarize Total = dcount(JobId_g), Failed = dcountif(JobId_g, ResultType == \"Failed\"), LastRun = max(TimeGenerated) by Runbook = RunbookName_s\n| extend ['Failure %'] = round(todouble(Failed) * 100 / Total, 1)\n| order by Failed desc, ['Failure %'] desc",
+        "size": 0,
+        "title": "Failure rate by runbook",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Failed",
+              "formatter": 8,
+              "formatOptions": {
+                "palette": "red"
+              }
+            },
+            {
+              "columnMatch": "Failure %",
+              "formatter": 8,
+              "formatOptions": {
+                "palette": "redBright"
+              }
+            }
+          ],
+          "sortBy": [
+            {
+              "itemKey": "Failed",
+              "sortOrder": 2
+            }
+          ]
+        }
+      },
+      "name": "query - failure rate"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and Category == \"JobStreams\"\n| where StreamType_s in (\"Error\", \"Warning\")\n| where \"*\" in ({RunbookName}) or RunbookName_s in ({RunbookName})\n| project TimeGenerated, Runbook = RunbookName_s, Stream = StreamType_s, JobId = JobId_g, Message = ResultDescription\n| order by TimeGenerated desc\n| take 50",
+        "size": 0,
+        "title": "Recent error and warning streams",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Message",
+              "formatter": 7,
+              "formatOptions": {
+                "linkTarget": "cellDetails",
+                "linkLabel": "View"
+              }
+            }
+          ]
+        }
+      },
+      "name": "query - error streams"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## Duration and cost drivers\n\nAutomation bills on job runtime, so the slowest runbooks are usually the most expensive ones."
+      },
+      "name": "text - duration heading"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and Category == \"JobLogs\"\n| where \"*\" in ({RunbookName}) or RunbookName_s in ({RunbookName})\n| summarize\n    Runbook   = any(RunbookName_s),\n    StartTime = minif(TimeGenerated, ResultType == \"Started\"),\n    EndTime   = maxif(TimeGenerated, ResultType in (\"Completed\", \"Failed\", \"Stopped\", \"Suspended\")),\n    Outcome   = anyif(ResultType, ResultType in (\"Completed\", \"Failed\", \"Stopped\", \"Suspended\"))\n    by JobId = JobId_g\n| where isnotempty(StartTime) and isnotempty(EndTime)\n| extend ['Duration (min)'] = round(datetime_diff('second', EndTime, StartTime) / 60.0, 2)\n| project Runbook, JobId, Outcome, StartTime, ['Duration (min)']\n| order by ['Duration (min)'] desc\n| take 25",
+        "size": 0,
+        "title": "Longest running jobs",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Duration (min)",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "orange"
+              }
+            }
+          ]
+        }
+      },
+      "name": "query - longest jobs"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.AUTOMATION\" and Category == \"JobLogs\"\n| where \"*\" in ({RunbookName}) or RunbookName_s in ({RunbookName})\n| where ResultType in (\"Completed\", \"Failed\")\n| extend Target = iff(isempty(column_ifexists(\"RunOn_s\", \"\")), \"Azure sandbox\", column_ifexists(\"RunOn_s\", \"\"))\n| summarize Jobs = dcount(JobId_g) by Target, ResultType",
+        "size": 0,
+        "title": "Sandbox vs Hybrid Worker",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "barchart"
+      },
+      "name": "query - sandbox vs hybrid"
+    }
+  ]
+}
