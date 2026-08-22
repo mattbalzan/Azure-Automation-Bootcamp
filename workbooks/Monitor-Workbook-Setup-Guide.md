@@ -187,3 +187,6 @@ Useful columns in `AzureDiagnostics` for Automation:
 | `Sandbox vs Hybrid` shows only "Azure sandbox" | Expected if nothing runs on a Hybrid Worker. `RunOn_s` is emitted only for hybrid jobs — the query uses `column_ifexists` so it will not fail when the column is absent. |
 | Duration column blank for some jobs | The job started before the selected time range, so no `Started` record was matched. Widen the time range. |
 | Workbook saves but is empty for colleagues | They need `Log Analytics Reader` on the workspace, not just access to the workbook. |
+
+
+![Diagram](./images/workbook-demo.png)
