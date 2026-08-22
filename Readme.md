@@ -17,7 +17,7 @@ Core capabilities include:
 
 ---
 
-## What's in this repo
+## 📦 What's in this repo
 
 | Path | What it is |
 | ---- | ---------- |
@@ -35,7 +35,7 @@ Every script carries full comment-based help — run `Get-Help .\script.ps1 -Ful
 
 ---
 
-## Pre-requisites
+## ✅ Pre-requisites
 
 - An **Azure Subscription**  
 - **Permissions**:
@@ -46,7 +46,7 @@ Every script carries full comment-based help — run `Get-Help .\script.ps1 -Ful
 
 ---
 
-## Pricing
+## 💰 Pricing
 
 | Resource            | Pricing Example                               |
 | ------------------- | --------------------------------------------- |
@@ -60,7 +60,7 @@ Every script carries full comment-based help — run `Get-Help .\script.ps1 -Ful
 
 ---
 
-## Permissions Model
+## 🔐 Permissions Model
 
 | Task                         | Role Required                   |
 | ----------------------------- | ------------------------------- |
@@ -73,7 +73,7 @@ Every script carries full comment-based help — run `Get-Help .\script.ps1 -Ful
 
 ---
 
-## Setting up Azure Automation
+## 🛠️ Setting up Azure Automation
 
 1. **Create an Automation Account** in the desired region  
 2. **Enable System-Managed Identity** and assign RBAC/Graph API permissions  
@@ -86,7 +86,7 @@ Every script carries full comment-based help — run `Get-Help .\script.ps1 -Ful
 
 ---
 
-## Types of Runbooks
+## 📚 Types of Runbooks
 
 | Runbook Type     | Language     | Notes                                                         |
 | ---------------- | ------------ | ------------------------------------------------------------- |
@@ -100,7 +100,7 @@ Every script carries full comment-based help — run `Get-Help .\script.ps1 -Ful
 
 ---
 
-## Real-world Scenarios
+## 🌍 Real-world Scenarios
 
 | Scenario                        | Description                                               |
 | ------------------------------- | --------------------------------------------------------- |
@@ -114,7 +114,7 @@ Every script carries full comment-based help — run `Get-Help .\script.ps1 -Ful
 
 ---
 
-## Hybrid Worker Group Setup (On-Prem / Cloud)
+## 🖥️ Hybrid Worker Group Setup (On-Prem / Cloud)
 
 1. Prepare a **Windows Server 2016+ or Linux VM**  
 2. Install the **Hybrid Worker Agent** via script or portal  
@@ -124,7 +124,7 @@ Every script carries full comment-based help — run `Get-Help .\script.ps1 -Ful
 
 ---
 
-## Monitoring, Alerts & Reporting
+## 📊 Monitoring, Alerts & Reporting
 
 With **Log Analytics + Azure Monitor**, you can:  
 
@@ -146,7 +146,7 @@ AzureDiagnostics
 
 ---
 
-## Monitoring Runbooks with an Azure Monitor Workbook
+## 📈 Monitoring Runbooks with an Azure Monitor Workbook
 
 Job history in the portal only shows one Automation Account at a time and drops off after 30 days. A **workbook** gives you a single pinnable dashboard across every account and workspace.
 
@@ -206,7 +206,7 @@ Fire when `Failures > 0`, evaluated every 5 minutes over a 15-minute window. The
 
 ---
 
-## Best Practices
+## 🏆 Best Practices
 
 - **Use Managed Identities**: Avoid service principals where possible, reduces secret management.  
 - **Modularize Runbooks**: Create reusable runbooks for common tasks (logging, Graph auth, etc.).  

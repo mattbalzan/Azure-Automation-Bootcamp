@@ -4,7 +4,7 @@ A step-by-step guide to deploying [Runbook-Monitoring.workbook.json](Runbook-Mon
 
 ---
 
-## What you get
+## 🎁 What you get
 
 | Tile | Answers |
 | ---- | ------- |
@@ -17,7 +17,7 @@ A step-by-step guide to deploying [Runbook-Monitoring.workbook.json](Runbook-Mon
 
 ---
 
-## Prerequisites
+## ✅ Prerequisites
 
 - An **Automation Account** with at least one runbook that has run.
 - A **Log Analytics workspace** in the same tenant (it does not have to be the same region, but same-region avoids cross-region egress).
@@ -28,7 +28,7 @@ A step-by-step guide to deploying [Runbook-Monitoring.workbook.json](Runbook-Mon
 
 ---
 
-## Step 1 — Send Automation logs to Log Analytics
+## 1️⃣ Step 1 — Send Automation logs to Log Analytics
 
 The workbook reads the `AzureDiagnostics` table. Nothing lands there until you create a diagnostic setting on the Automation Account.
 
@@ -64,7 +64,7 @@ az monitor diagnostic-settings create \
 
 > **Cost warning:** `JobStreams` includes every `Write-Output` line your runbooks emit. On a chatty runbook this dwarfs `JobLogs`. If ingestion cost becomes an issue, keep `JobLogs` and drop `JobStreams` — you lose the error-message tile only.
 
-### Verify data is flowing
+### 🔍 Verify data is flowing
 
 Run this in the workspace's Logs blade. If it returns nothing after ~15 minutes, the diagnostic setting is wrong or no jobs have run.
 
@@ -76,7 +76,7 @@ AzureDiagnostics
 
 ---
 
-## Step 2 — Import the workbook
+## 2️⃣ Step 2 — Import the workbook
 
 **Option A — Portal (quickest)**
 
@@ -123,7 +123,7 @@ resource workbook 'Microsoft.Insights/workbooks@2023-06-01' = {
 
 ---
 
-## Step 3 — Set the parameters
+## 3️⃣ Step 3 — Set the parameters
 
 At the top of the workbook you'll see three pills:
 
@@ -137,7 +137,7 @@ Once set, use **Save** again so the selections persist as the workbook defaults.
 
 ---
 
-## Step 4 — Alert on what matters
+## 4️⃣ Step 4 — Alert on what matters
 
 The workbook is for looking; alerts are for being told. Create a log search alert from the same query:
 
@@ -152,7 +152,7 @@ Portal → **Monitor** → **Alerts** → *New alert rule* → scope the workspa
 
 ---
 
-## Reference — the queries behind each tile
+## 📖 Reference — the queries behind each tile
 
 | Tile | Table | Key filter |
 | ---- | ----- | ---------- |
@@ -177,7 +177,7 @@ Useful columns in `AzureDiagnostics` for Automation:
 
 ---
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 | Symptom | Cause / fix |
 | ------- | ----------- |
@@ -190,7 +190,7 @@ Useful columns in `AzureDiagnostics` for Automation:
 
 ---
 
-## Demo Report
+## 🖼️ Demo Report
 
 
 <img src="../images/workbook-demo.png" alt="Az Automation Workbook">
